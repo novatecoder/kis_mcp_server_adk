@@ -646,87 +646,87 @@ async def inquery_stock_ask(symbol: str):
         
         return response.json()
 
-@mcp.tool(
-    name="order-overseas-stock",
-    description="Order overseas stock (buy/sell) from Korea Investment & Securities",
-)
-async def order_overseas_stock(symbol: str, quantity: int, price: float, order_type: str, market: str):
-    """
-    Order overseas stock (buy/sell)
+# @mcp.tool(
+#     name="order-overseas-stock",
+#     description="Order overseas stock (buy/sell) from Korea Investment & Securities",
+# )
+# async def order_overseas_stock(symbol: str, quantity: int, price: float, order_type: str, market: str):
+#     """
+#     Order overseas stock (buy/sell)
     
-    Args:
-        symbol: Stock symbol (e.g. "AAPL")
-        quantity: Order quantity
-        price: Order price (0 for market price)
-        order_type: Order type ("buy" or "sell", case-insensitive)
-        market: Market code ("NASD" for NASDAQ, "NYSE" for NYSE, etc.)
+#     Args:
+#         symbol: Stock symbol (e.g. "AAPL")
+#         quantity: Order quantity
+#         price: Order price (0 for market price)
+#         order_type: Order type ("buy" or "sell", case-insensitive)
+#         market: Market code ("NASD" for NASDAQ, "NYSE" for NYSE, etc.)
         
-    Returns:
-        Dictionary containing order information
-    """
-    # Normalize order_type to lowercase
-    order_type = order_type.lower()
-    if order_type not in ["buy", "sell"]:
-        raise ValueError('order_type must be either "buy" or "sell"')
+#     Returns:
+#         Dictionary containing order information
+#     """
+#     # Normalize order_type to lowercase
+#     order_type = order_type.lower()
+#     if order_type not in ["buy", "sell"]:
+#         raise ValueError('order_type must be either "buy" or "sell"')
 
-    # Normalize market code to uppercase
-    market = market.upper()
-    if market not in MARKET_CODES:
-        raise ValueError(f"Unsupported market: {market}. Supported markets: {', '.join(MARKET_CODES.keys())}")
+#     # Normalize market code to uppercase
+#     market = market.upper()
+#     if market not in MARKET_CODES:
+#         raise ValueError(f"Unsupported market: {market}. Supported markets: {', '.join(MARKET_CODES.keys())}")
 
-    async with httpx.AsyncClient() as client:
-        token = await get_access_token(client)
+#     async with httpx.AsyncClient() as client:
+#         token = await get_access_token(client)
         
-        # Get market prefix for TR_ID
-        market_prefix = {
-            "NASD": "us",  # 나스닥
-            "NYSE": "us",  # 뉴욕
-            "AMEX": "us",  # 아멕스
-            "SEHK": "hk",  # 홍콩
-            "SHAA": "sh",  # 중국상해
-            "SZAA": "sz",  # 중국심천
-            "TKSE": "jp",  # 일본
-            "HASE": "vn",  # 베트남 하노이
-            "VNSE": "vn",  # 베트남 호치민
-        }.get(market)
+#         # Get market prefix for TR_ID
+#         market_prefix = {
+#             "NASD": "us",  # 나스닥
+#             "NYSE": "us",  # 뉴욕
+#             "AMEX": "us",  # 아멕스
+#             "SEHK": "hk",  # 홍콩
+#             "SHAA": "sh",  # 중국상해
+#             "SZAA": "sz",  # 중국심천
+#             "TKSE": "jp",  # 일본
+#             "HASE": "vn",  # 베트남 하노이
+#             "VNSE": "vn",  # 베트남 호치민
+#         }.get(market)
         
-        if not market_prefix:
-            raise ValueError(f"Unsupported market: {market}")
+#         if not market_prefix:
+#             raise ValueError(f"Unsupported market: {market}")
             
-        tr_id_key = f"{market_prefix}_{order_type}"
-        tr_id = TrIdManager.get_tr_id(tr_id_key)
+#         tr_id_key = f"{market_prefix}_{order_type}"
+#         tr_id = TrIdManager.get_tr_id(tr_id_key)
         
-        if not tr_id:
-            raise ValueError(f"Invalid operation type: {tr_id_key}")
+#         if not tr_id:
+#             raise ValueError(f"Invalid operation type: {tr_id_key}")
         
-        # Prepare request data
-        request_data = {
-            "CANO": os.environ["KIS_CANO"],           # 계좌번호
-            "ACNT_PRDT_CD": "01",                     # 계좌상품코드
-            "OVRS_EXCG_CD": market,                   # 해외거래소코드
-            "PDNO": symbol,                           # 종목코드
-            "ORD_QTY": str(quantity),                 # 주문수량
-            "OVRS_ORD_UNPR": str(price),             # 주문단가
-            "ORD_SVR_DVSN_CD": "0",                  # 주문서버구분코드
-            "ORD_DVSN": "00" if price > 0 else "01"  # 주문구분 (00: 지정가, 01: 시장가)
-        }
+#         # Prepare request data
+#         request_data = {
+#             "CANO": os.environ["KIS_CANO"],           # 계좌번호
+#             "ACNT_PRDT_CD": "01",                     # 계좌상품코드
+#             "OVRS_EXCG_CD": market,                   # 해외거래소코드
+#             "PDNO": symbol,                           # 종목코드
+#             "ORD_QTY": str(quantity),                 # 주문수량
+#             "OVRS_ORD_UNPR": str(price),             # 주문단가
+#             "ORD_SVR_DVSN_CD": "0",                  # 주문서버구분코드
+#             "ORD_DVSN": "00" if price > 0 else "01"  # 주문구분 (00: 지정가, 01: 시장가)
+#         }
         
-        response = await client.post(
-            f"{TrIdManager.get_domain(order_type)}{OVERSEAS_ORDER_PATH}",
-            headers={
-                "content-type": CONTENT_TYPE,
-                "authorization": f"{AUTH_TYPE} {token}",
-                "appkey": os.environ["KIS_APP_KEY"],
-                "appsecret": os.environ["KIS_APP_SECRET"],
-                "tr_id": tr_id,
-            },
-            json=request_data
-        )
+#         response = await client.post(
+#             f"{TrIdManager.get_domain(order_type)}{OVERSEAS_ORDER_PATH}",
+#             headers={
+#                 "content-type": CONTENT_TYPE,
+#                 "authorization": f"{AUTH_TYPE} {token}",
+#                 "appkey": os.environ["KIS_APP_KEY"],
+#                 "appsecret": os.environ["KIS_APP_SECRET"],
+#                 "tr_id": tr_id,
+#             },
+#             json=request_data
+#         )
         
-        if response.status_code != 200:
-            raise Exception(f"Failed to order overseas stock: {response.text}")
+#         if response.status_code != 200:
+#             raise Exception(f"Failed to order overseas stock: {response.text}")
         
-        return response.json()
+#         return response.json()
 
 @mcp.tool(
     name="inquery-overseas-stock-price",
