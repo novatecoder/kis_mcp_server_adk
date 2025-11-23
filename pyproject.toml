@@ -1,12 +1,12 @@
 [project]
-name = "kis-mcp-server"
+name = "kis-mcp-server-adk"
 version = "0.1.0"
-description = "한국투자증권 REST API를 사용한 MCP(Model Context Protocol) 서버"
+description = "한국투자증권 REST API를 사용한 MCP 서버"
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
 authors = [
-    { name = "migusdn", email = "migusdn@gmail.com" }
+    { name = "wonhyeok kim", email = "novatecoder@gmail.com" }
 ]
 dependencies = [
     "fastmcp>=2.5.1",
@@ -14,4 +14,20 @@ dependencies = [
     "mcp>=1.9.1",
     "pathlib>=1.0.1",
     "python-dotenv>=1.1.0",
+    "xmltodict>=0.13.0" # server.py 코드에 있어서 추가함
 ]
+
+# [중요] src 레이아웃 인식 설정 (패키지 이름 수정)
+[project.scripts]
+run-server = "kis_mcp_server_adk.main:main"
+
+# 테스트용 의존성 추가
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
