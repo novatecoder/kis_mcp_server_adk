@@ -10,7 +10,7 @@ from server import (
     inquery_stock_info,
     inquery_stock_history,
     inquery_stock_ask,
-    order_overseas_stock,
+    # order_overseas_stock,
     inquery_overseas_stock_price
 )
 

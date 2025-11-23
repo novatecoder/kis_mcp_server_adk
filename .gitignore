@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Environment and sensitive files
+.env
+token.json
+
+# OS
+.DS_Store
