@@ -767,6 +767,6 @@ async def inquery_overseas_stock_price(symbol: str, market: str):
         
         return response.json()
 
-if __name__ == "__main__":
-    logger.info("Starting MCP server...")
-    mcp.run(transport="streamable-http")
+# if __name__ == "__main__":
+#     logger.info("Starting MCP server...")
+#     mcp.run(transport="streamable-http")

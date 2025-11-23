@@ -17,7 +17,7 @@ def run_test_server():
     테스트 세션 시작 전 서버를 실행하고, 끝나면 종료하는 픽스처
     """
     # 1. 서버 실행 명령어 (src 모듈 실행)
-    cmd = [sys.executable, "-m", "kis_mcp_server.main"]
+    cmd = [sys.executable, "-m", "kis_mcp_server_adk.main"]
     
     # 환경변수 복사 (필요시 수정)
     env = os.environ.copy()

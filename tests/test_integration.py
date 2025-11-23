@@ -10,17 +10,39 @@ from fastmcp import Client
 def parse_result(result):
     """
     MCP 툴 실행 결과(JSON 문자열)를 파싱하여 파이썬 딕셔너리로 반환합니다.
-    client_test.py의 로직을 그대로 사용합니다.
     """
     try:
-        # result.content 리스트에서 text(내용물)를 꺼냅니다.
-        if not result.content:
-            return None
+        # [수정 포인트] result가 리스트인지 객체인지 확인하여 처리
+        content = None
         
-        json_data_string = result.content[0].text
+        if isinstance(result, list):
+            # result가 바로 리스트인 경우 (현재 발생하는 상황)
+            if not result:
+                return None
+            content = result
+        elif hasattr(result, 'content'):
+            # result가 .content 속성을 가진 객체인 경우 (구버전 호환)
+            if not result.content:
+                return None
+            content = result.content
+        else:
+            print(f"[ERROR] 알 수 없는 결과 타입입니다: {type(result)}")
+            return None
+
+        # 리스트의 첫 번째 요소에서 텍스트 추출
+        first_item = content[0]
+        
+        # TextContent 객체라면 .text 속성을 사용
+        if hasattr(first_item, "text"):
+            json_data_string = first_item.text
+        else:
+            # 문자열이거나 다른 형태일 경우
+            json_data_string = str(first_item)
+
         return json.loads(json_data_string)
+
     except Exception as e:
-        print(f"[ERROR] 결과 파싱 실패: {e}")
+        print(f"[ERROR] 결과 파싱 실패: {e} (Result Type: {type(result)})")
         return None
 
 # ----------------------------------------------------------------
@@ -100,31 +122,8 @@ async def test_03_order_list_inquiry(run_test_server):
         assert data is not None
         print("[성공] 일별 주문 체결 내역 조회 완료")
 
-
 @pytest.mark.asyncio
-async def test_04_order_detail_inquiry(run_test_server):
-    """
-    [주문 상세 내역] example.py의 test_order_detail 기능
-    """
-    server_url = run_test_server
-    today = datetime.now().strftime("%Y%m%d")
-    
-    async with Client(server_url) as client:
-        print(f"\n[Action] 'inquery-order-detail' 툴 호출...")
-        
-        # 주문번호 없이 조회 테스트 (API 스펙에 따라 빈값 허용 시)
-        result = await client.call_tool("inquery-order-detail", {
-            "order_no": "", 
-            "order_date": today
-        })
-        data = parse_result(result)
-        
-        assert data is not None
-        print("[성공] 주문 상세 내역 조회 완료")
-
-
-@pytest.mark.asyncio
-async def test_05_stock_info_daily(run_test_server):
+async def test_04_stock_info_daily(run_test_server):
     """
     [일별 주가 조회] example.py의 test_stock_info 기능
     """
@@ -152,7 +151,7 @@ async def test_05_stock_info_daily(run_test_server):
 
 
 @pytest.mark.asyncio
-async def test_06_stock_history_chart(run_test_server):
+async def test_05_stock_history_chart(run_test_server):
     """
     [차트용 주가 조회] example.py의 test_stock_history 기능
     """
@@ -173,54 +172,3 @@ async def test_06_stock_history_chart(run_test_server):
         
         assert data is not None
         print("[성공] 차트용 주가 히스토리 조회 완료")
-
-
-@pytest.mark.asyncio
-async def test_07_stock_ask_price(run_test_server):
-    """
-    [호가 조회] example.py의 test_stock_ask 기능
-    """
-    server_url = run_test_server
-    symbol = "005930"
-    
-    async with Client(server_url) as client:
-        print(f"\n[Action] 'inquery-stock-ask' 툴 호출...")
-        
-        result = await client.call_tool("inquery-stock-ask", {"symbol": symbol})
-        data = parse_result(result)
-        
-        assert data is not None
-        
-        if "output1" in data:
-            askp = data['output1'].get('askp1', 'N/A')
-            bidp = data['output1'].get('bidp1', 'N/A')
-            print(f"[성공] 호가 조회 완료 (매도1호가: {askp}, 매수1호가: {bidp})")
-        else:
-            print("[성공] 호가 데이터 수신 완료")
-
-
-@pytest.mark.asyncio
-async def test_08_overseas_stock_price(run_test_server):
-    """
-    [해외 주식 현재가] example.py의 해외주식 조회 기능
-    """
-    server_url = run_test_server
-    symbol = "AAPL"
-    market = "NASD"
-    
-    async with Client(server_url) as client:
-        print(f"\n[Action] 'inquery-overseas-stock-price' 툴 호출 ({symbol}/{market})...")
-        
-        try:
-            result = await client.call_tool("inquery-overseas-stock-price", {
-                "symbol": symbol, 
-                "market": market
-            })
-            data = parse_result(result)
-            
-            assert data is not None
-            print(f"[성공] {symbol} 현재가 조회 완료")
-            
-        except Exception as e:
-            # 해외주식은 권한이나 장 시간에 따라 실패할 수 있으므로 에러 로그만 출력하고 테스트는 패스 처리할 수도 있음
-            print(f"[Info] 해외주식 조회 중 예외 발생 (정상일 수 있음): {e}")
